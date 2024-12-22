@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Financial Data Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .chat-message {
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen">
+    <div class="container mx-auto p-4 max-w-4xl">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold mb-4 text-gray-800">Financial Data Chatbot</h1>
+            
+            <!-- Chat Container -->
+            <div id="chat-messages" class="h-96 overflow-y-auto mb-4 p-4 bg-gray-50 rounded-lg">
+                <div class="chat-message">
+                    <div class="flex items-start mb-4">
+                        <div class="flex-shrink-0 bg-blue-500 rounded-full p-2">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3 bg-blue-100 rounded-lg py-2 px-4">
+                            <p class="text-gray-800">Welcome! You can ask me about company financials. Try:</p>
+                            <ul class="list-disc ml-4 mt-2">
+                                <li>What is the total revenue of Apple in 2022?</li>
+                                <li>Show me the net income of Microsoft in 2021</li>
+                                <li>Type 'help' to see all available metrics</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Input Area -->
+            <div class="flex items-center">
+                <input type="text" id="user-input" 
+                       class="flex-1 p-3 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Type your message here...">
+                <button onclick="sendMessage()" 
+                        class="bg-blue-500 text-white px-6 py-3 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addMessage(message, isUser = false) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+            
+            const innerHtml = `
+                <div class="flex items-start mb-4 ${isUser ? 'justify-end' : ''}">
+                    <div class="flex-shrink-0 ${isUser ? 'order-2 ml-3' : 'mr-3'} bg-${isUser ? 'green' : 'blue'}-500 rounded-full p-2">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="${isUser ? 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' : 
+                                  'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z'}"/>
+                        </svg>
+                    </div>
+                    <div class="bg-${isUser ? 'green' : 'blue'}-100 rounded-lg py-2 px-4 ${isUser ? 'order-1' : ''}">
+                        <p class="text-gray-800">${message.replace(/\n/g, '<br>')}</p>
+                    </div>
+                </div>
+            `;
+            
+            messageDiv.innerHTML = innerHtml;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (message === '') return;
+
+            addMessage(message, true);
+            input.value = '';
+
+            fetch('/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({message: message})
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(data.response);
+            })
+            .catch(error => {
+                addMessage('Sorry, there was an error processing your request.');
+            });
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
